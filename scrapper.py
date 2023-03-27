@@ -17,11 +17,6 @@ BASE_URL = "https://sanctioned-suicide.net"
 START_URL = "https://sanctioned-suicide.net/forums/suicide-discussion.2"
 DATA_PATH = './data/'
 
-option = webdriver.ChromeOptions()
-
-option.add_argument('--headless')
-option.add_argument('--no-sandbox')
-driver = webdriver.Chrome(options=option, service_log_path='log.txt')
 
 
 def is_element_present(drv, type_of_element, locator):
@@ -273,6 +268,12 @@ def get_all_threads(driver):
 
 
 if __name__ == "__main__":
+    option = webdriver.ChromeOptions()
+
+    option.add_argument('--headless')
+    option.add_argument('--no-sandbox')
+    driver = webdriver.Chrome(options=option, service_log_path='log.txt')
+
     driver.get(START_URL)
     WebDriverWait(driver, 5)
     coockie_link = driver.find_element(By.XPATH,
