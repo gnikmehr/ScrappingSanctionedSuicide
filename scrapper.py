@@ -270,7 +270,9 @@ def get_all_threads(driver):
 if __name__ == "__main__":
     option = webdriver.ChromeOptions()
 
-    option.add_argument('--headless')
+    # option.add_argument('--headless')
+    option.headless = True
+    option.add_argument('--disable-dev-shm-usage')
     option.add_argument('--no-sandbox')
     driver = webdriver.Chrome(options=option, service_log_path='log.txt')
 
