@@ -249,8 +249,8 @@ def get_all_threads(driver):
                 all_threads.append({'title': title, 'url': url, 'views': views, 'replies': replies, 'label': label})
 
             time.sleep(2)
-            print(f"Lenght of threads list till page {thread_page} is {len(threads)}")
-            logging.info(f"Lenght of threads list till page {thread_page} is {len(threads)}")
+            print(f"Lenght of threads list till page {thread_page} is {len(all_threads)}")
+            logging.info(f"Lenght of threads list till page {thread_page} is {len(all_threads)}")
 
             next_exist = is_element_present(driver, By.LINK_TEXT, 'Next')
             if next_exist:
