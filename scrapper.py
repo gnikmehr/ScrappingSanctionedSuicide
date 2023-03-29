@@ -214,7 +214,7 @@ def get_thread_details(threads_list):
 
 
 def get_all_threads(driver):
-    threads = []
+    all_threads = []
     thread_page = 0
     time.sleep(2)
     last_page = driver.find_element(By.XPATH, './/li[@class="pageNav-page "]').text
@@ -225,7 +225,7 @@ def get_all_threads(driver):
         try:
             thread_page += 1
 
-            wait = WebDriverWait(driver, 10)
+            wait = WebDriverWait(driver, 5)
             wait.until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
             threads_driver = driver.find_elements(By.CSS_SELECTOR, "[class^='structItem structItem--thread ']")
 
@@ -246,15 +246,18 @@ def get_all_threads(driver):
                 else:
                     label = ""
 
-                threads.append({'title': title, 'url': url, 'views': views, 'replies': replies, 'label': label})
-
-                time.sleep(2)
+                all_threads.append({'title': title, 'url': url, 'views': views, 'replies': replies, 'label': label})
 
             time.sleep(2)
             print(f"Lenght of threads list till page {thread_page} is {len(threads)}")
             logging.info(f"Lenght of threads list till page {thread_page} is {len(threads)}")
 
-            driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
+            next_exist = is_element_present(driver, By.LINK_TEXT, 'Next')
+            if next_exist:
+                driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
+            else:
+                driver.refresh()
+                driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
 
         except (TimeoutException, WebDriverException) as e:
             logging.error(f"In getting each thread data {e} occured!")
@@ -262,9 +265,9 @@ def get_all_threads(driver):
             break
 
     with open(DATA_PATH + f"All_Threads.json", 'w') as fp:
-        json.dump(threads, fp)
+        json.dump(all_threads, fp)
 
-    return threads
+    return all_threads
 
 
 if __name__ == "__main__":
