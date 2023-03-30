@@ -7,6 +7,7 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
     TimeoutException
 
 import time
+import string
 import json
 from iteration_utilities import unique_everseen
 import logging
@@ -186,17 +187,18 @@ def get_thread_details(threads_list):
         # Save thread data
         try:
             thread_name = item["title"].replace(" ", "_")
+            no_punct_thread_name = thread_name.translate(str.maketrans("", "", string.punctuation))
             save_time = time.strftime("%Y%m%d-%H%M%S")
-            with open(DATA_PATH + f"{thread_name}_{save_time}.json", 'w') as fp:
-                json.dump(thread_detail, fp)
+            with open(DATA_PATH + f"{no_punct_thread_name}_{save_time}.json", 'w', encoding='utf-8') as fp:
+                json.dump(thread_detail, fp, ensure_ascii=False)
             logging.info(f"** {thread_name} is saved!")
             print(f"** {thread_name} is saved!")
             thread_detail = []
         except:
             logging.error(f"Problem with the name {thread_name}")
             print(f"Problem with the name {thread_name}")
-            with open(DATA_PATH + f"noName_{save_time}.json", 'w') as fp:
-                json.dump(thread_detail, fp)
+            with open(DATA_PATH + f"noName_{save_time}.json", 'w', encoding='utf-8') as fp:
+                json.dump(thread_detail, fp, ensure_ascii=False)
             th_name = item["title"]
             logging.info(f"** {th_name} is saved!")
             print(f"** {th_name} is saved!")
@@ -254,10 +256,20 @@ def get_all_threads(driver):
 
             next_exist = is_element_present(driver, By.LINK_TEXT, 'Next')
             if next_exist:
-                driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
+                try:
+                    driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
+                except StaleElementReferenceException:
+                    element = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']")))
+                    element.click()
             else:
                 driver.refresh()
-                driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
+                try:
+                    driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
+                except StaleElementReferenceException:
+                    element = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']")))
+                    element.click()
 
         except (TimeoutException, WebDriverException) as e:
             logging.error(f"In getting each thread data {e} occured!")
