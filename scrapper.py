@@ -264,7 +264,7 @@ def get_all_threads(driver):
             print(f"In getting each thread data {e} occured!")
             break
 
-    with open(DATA_PATH + f"All_Threads.json", 'w') as fp:
+    with open(DATA_PATH + f"All_Threads.json", 'a') as fp:
         json.dump(all_threads, fp)
 
     return all_threads
@@ -279,7 +279,8 @@ if __name__ == "__main__":
     option.add_argument('--no-sandbox')
     driver = webdriver.Chrome(options=option, service_log_path='log.txt')
 
-    driver.get(START_URL)
+    last_thread_page = 377
+    driver.get(START_URL + '/page-' + str(last_thread_page))
     WebDriverWait(driver, 5)
     coockie_link = driver.find_element(By.XPATH,
                                        "//a[@class='js-noticeDismiss button--notice button button--icon button--icon--confirm rippleButton']")
@@ -287,4 +288,4 @@ if __name__ == "__main__":
 
     threads = get_all_threads(driver)
 
-    get_thread_details(threads)
+    # get_thread_details(threads)
