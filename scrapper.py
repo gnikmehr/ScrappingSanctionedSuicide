@@ -52,7 +52,7 @@ def get_reactions(driver):
         try:
             WebDriverWait(driver, 20)
             reaction_driver = driver.find_elements(By.XPATH, "//div[@class='contentRow']")
-            time.sleep(3)
+            time.sleep(1)
             for reaction in reaction_driver:
                 username = reaction.find_element(By.XPATH, './/h3[@class="contentRow-header"]').text
                 type_of_reaction = reaction.find_element(By.XPATH,
@@ -68,9 +68,9 @@ def get_reactions(driver):
                 reactions.append({'username': username, 'type_of_reaction': type_of_reaction, 'time': reaction_time,
                                   'messages': messages, 'reaction_score': reaction_score})
 
-            time.sleep(2)
+            #time.sleep(1)
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)
+            time.sleep(1)
 
             continue_exist = is_element_present(driver, By.LINK_TEXT, 'Continue…')
             if continue_exist:
@@ -87,7 +87,6 @@ def get_reactions(driver):
 def get_posts_each_page(driver):
     posts = []
     post_driver = driver.find_elements(By.CLASS_NAME, 'message-inner')
-    time.sleep(1)
     logging.info("Getting posts in a page ...")
     print("Getting posts in a page ...")
 
@@ -118,7 +117,6 @@ def get_posts_each_page(driver):
                 driver.close()
                 driver.switch_to.window(main_window_handle)
 
-                time.sleep(2)
             else:
                 reactions = []
                 pass
@@ -126,7 +124,7 @@ def get_posts_each_page(driver):
             logging.error(f"In getting reactions of each post {e} happen!")
             print(f"In getting reactions of each post {e} happen!")
 
-        time.sleep(2)
+        time.sleep(1)
 
         posts.append({'author': author, 'post': post_text, 'post_date': post_date, 'reactions': reactions})
 
@@ -145,12 +143,12 @@ def get_all_the_posts_in_thread(driver):
             logging.info(f" - Page of Posts: {post_page}")
             print(" - Page of Posts:", post_page)
 
-            WebDriverWait(driver, 20)
-            time.sleep(2)
+            WebDriverWait(driver, 10)
+            time.sleep(0.5)
             thread_users.extend(get_users(driver))
 
             thread_posts.extend(get_posts_each_page(driver))
-            time.sleep(3)
+            time.sleep(0.5)
 
             next_exist = is_element_present(driver, By.LINK_TEXT, 'Next')
             if next_exist:
@@ -167,60 +165,83 @@ def get_all_the_posts_in_thread(driver):
 
 def get_thread_details(threads_list):
     thread_detail = []
+
+    output = open(DATA_PATH + "Thread_names.txt", 'a')
+
+    with open(DATA_PATH + "Thread_names.txt", 'r') as file:
+        # Read the contents of the file into a list
+        names = file.readlines()
+
+    cleaned_names = [line.replace('\n', '') for line in names]
+
     thread_count = 0
     for item in threads_list:
-        start_time = time.time()
-        thread_count += 1
-        logging.info(f"* Thread Number is: {thread_count}")
-        print(f"* Thread Number is: {thread_count}")
-        driver.get(BASE_URL + item['url'])
+        # start_time = time.time()
 
-        thread_users, thread_posts = get_all_the_posts_in_thread(driver)
+        no_punct_thread_name = item["title"].translate(str.maketrans("", "", string.punctuation))
+        clean_name = no_punct_thread_name.encode('ascii', 'ignore').decode()
+        thread_name = clean_name.replace(" ", "_")
+        
+        if thread_name not in cleaned_names:
+            print(thread_name)
+            thread_count += 1
+            logging.info(f"* Thread Number is: {thread_count}")
+            print(f"* Thread Number is: {thread_count}")
+            driver.get(BASE_URL + item['url'])
 
-        # Remove duplicates users
-        unique_users = list(unique_everseen(thread_users))
+            thread_users, thread_posts = get_all_the_posts_in_thread(driver)
 
-        thread_detail.append(
-            {'title': item["title"], 'url': item["url"], 'views': item["views"], 'replies': item["replies"],
-             'label': item["label"], 'users': unique_users, 'posts': thread_posts})
+            # Remove duplicates users
+            unique_users = list(unique_everseen(thread_users))
 
-        # Save thread data
-        try:
-            thread_name = item["title"].replace(" ", "_")
-            no_punct_thread_name = thread_name.translate(str.maketrans("", "", string.punctuation))
-            save_time = time.strftime("%Y%m%d-%H%M%S")
-            with open(DATA_PATH + f"{no_punct_thread_name}_{save_time}.json", 'w', encoding='utf-8') as fp:
-                json.dump(thread_detail, fp, ensure_ascii=False)
-            logging.info(f"** {thread_name} is saved!")
-            print(f"** {thread_name} is saved!")
-            thread_detail = []
-        except:
-            logging.error(f"Problem with the name {thread_name}")
-            print(f"Problem with the name {thread_name}")
-            with open(DATA_PATH + f"noName_{save_time}.json", 'w', encoding='utf-8') as fp:
-                json.dump(thread_detail, fp, ensure_ascii=False)
-            th_name = item["title"]
-            logging.info(f"** {th_name} is saved!")
-            print(f"** {th_name} is saved!")
-            thread_detail = []
+            thread_detail.append(
+                {'title': item["title"], 'url': item["url"], 'views': item["views"], 'replies': item["replies"],
+                 'label': item["label"], 'users': unique_users, 'posts': thread_posts})
 
-        end_time = time.time()
-        if thread_count % 3 == 0:
-            print(f"Time taken for three thread {end_time - start_time} seconds")
-            logging.error(f"Time taken for three thread {end_time - start_time} seconds")
+            # Save thread data
+            try:
+                save_time = time.strftime("%Y%m%d-%H%M%S")
+                with open(DATA_PATH + f"{thread_name}_{save_time}.json", 'w', encoding='utf-8') as fp:
+                    json.dump(thread_detail, fp)
+                logging.info(f"** {thread_name} is saved!")
+                print(f"** {thread_name} is saved!")
+                output.write(thread_name + '\n')
+                thread_detail = []
+            except:
+                logging.error(f"Problem with the name {thread_name}")
+                print(f"Problem with the name {thread_name}")
+                with open(DATA_PATH + f"noName_{save_time}.json", 'w', encoding='utf-8') as fp:
+                    json.dump(thread_detail, fp)
+
+                logging.info(f"** {thread_name} is saved!")
+                print(f"** {thread_name} is saved!")
+                output.write(thread_name + '\n')
+                thread_detail = []
         else:
+            print("Already have this thread")
+            thread_count += 1
+            logging.info(f"* Thread Number is: {thread_count}")
+            print(f"* Thread Number is: {thread_count}")
             pass
 
-        time.sleep(5)
+        #        end_time = time.time()
+        #        if thread_count % 3 == 0:
+        #            print(f"Time taken for three thread {end_time - start_time} seconds")
+        #            logging.error(f"Time taken for three thread {end_time - start_time} seconds")
+        #        else:
+        #            pass
+
+        time.sleep(2)
     driver.quit()
 
 
 def get_all_threads(driver):
     all_threads = []
-    thread_page = 0
-    time.sleep(2)
-    last_page = driver.find_element(By.XPATH, './/li[@class="pageNav-page "]').text
+    thread_page = 1217
+    #time.sleep(2)
+    last_page = driver.find_elements(By.XPATH, './/li[@class="pageNav-page "]')[-1].text
     print("Getting all threads start ...")
+
     logging.info("Getting all threads start ...")
 
     while thread_page < int(last_page):
@@ -232,7 +253,7 @@ def get_all_threads(driver):
             threads_driver = driver.find_elements(By.CSS_SELECTOR, "[class^='structItem structItem--thread ']")
 
             for thread in threads_driver:
-                time.sleep(2)
+                time.sleep(1)
                 temp = thread.find_element(By.CLASS_NAME, 'structItem-title')
                 title = temp.text
                 url = temp.get_attribute('uix-href')
@@ -250,7 +271,7 @@ def get_all_threads(driver):
 
                 all_threads.append({'title': title, 'url': url, 'views': views, 'replies': replies, 'label': label})
 
-            time.sleep(2)
+            #time.sleep(2)
             print(f"Lenght of threads list till page {thread_page} is {len(all_threads)}")
             logging.info(f"Lenght of threads list till page {thread_page} is {len(all_threads)}")
 
@@ -259,16 +280,14 @@ def get_all_threads(driver):
                 try:
                     driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
                 except StaleElementReferenceException:
-                    element = WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']")))
+                    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']")))
                     element.click()
             else:
                 driver.refresh()
                 try:
                     driver.find_element(By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']").click()
                 except StaleElementReferenceException:
-                    element = WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']")))
+                    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//a[@class='pageNav-jump pageNav-jump--next']")))
                     element.click()
 
         except (TimeoutException, WebDriverException) as e:
@@ -291,13 +310,21 @@ if __name__ == "__main__":
     option.add_argument('--no-sandbox')
     driver = webdriver.Chrome(options=option, service_log_path='log.txt')
 
-    last_thread_page = 377
-    driver.get(START_URL + '/page-' + str(last_thread_page))
-    WebDriverWait(driver, 5)
-    coockie_link = driver.find_element(By.XPATH,
-                                       "//a[@class='js-noticeDismiss button--notice button button--icon button--icon--confirm rippleButton']")
-    coockie_link.click()
+#    last_thread_page = 1218
+#    driver.get(START_URL + '/page-' + str(last_thread_page))
+    
+ 
+#    WebDriverWait(driver, 5)
+#    coockie_link = driver.find_element(By.XPATH,
+#                                       "//a[@class='js-noticeDismiss button--notice button button--icon button--icon--confirm rippleButton']")
+#    coockie_link.click()
 
-    threads = get_all_threads(driver)
+    #threads = get_all_threads(driver)
+    
+    with open(DATA_PATH + f"All_Threads.json", 'r') as f:
+    # Load the JSON data from the file
+        threads = json.load(f)
 
-    # get_thread_details(threads)
+    #print(len(threads))
+    get_thread_details(threads)
+    
