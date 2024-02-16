@@ -1,0 +1,6 @@
+# Ignore log files
+*.png
+
+# Ignore temporary files
+myvenv/
+data/
